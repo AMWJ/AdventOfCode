@@ -1,0 +1,32 @@
+{
+	"name": "advent_of_code_2024",
+	"version": "1.0.0",
+	"description": "Advent of Code 2024 solutions in Rust",
+	"main": "src-ts/index.ts",
+	"scripts": {
+		"start-ts": "nodemon src-ts/index.ts",
+		"start-rs": "cargo run --",
+		"build": "cargo build --release",
+		"test-ts": "jest"
+	},
+	"author": "Ariel Jacobs",
+	"license": "UNLICENSED",
+	"dependencies": {
+		"typescript": "^5.7.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^22.10.1",
+		"jest": "^29.7.0",
+		"nodemon": "^3.1.7",
+		"ts-jest": "^29.2.5",
+		"ts-node": "^10.9.2"
+	},
+	"resolutions": {
+		"glob": "^11.0.0"
+	},
+	"nodemonConfig": {
+		"ext": "ts, txt, json"
+	}
+}
