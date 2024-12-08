@@ -12,7 +12,7 @@ describe("star1", () => {
 describe("star2", () => {
 	it("should be correct", async () => {
 		expect({ value: await star2() }).toMatchInlineSnapshot({
-			value: Number.NaN,
+			value: 689,
 		});
 	});
 });

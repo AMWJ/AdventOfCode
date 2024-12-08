@@ -15,33 +15,38 @@ export const star1 = async () => {
 export const star2 = async () => {
 	const lines = await readLineOfNumbers(`${__dirname}/input.txt`);
 	return lines.filter((line) => {
-		const diffs = line.map((element, i) =>
-			i === 0 ? 0 : element - line[i - 1],
-		);
-		diffs.shift();
+		const diffs = line.slice(1).map((element, i) => element - line[i]);
 		const firstThreeDiffs = diffs.slice(0, 3);
 		const direction =
 			firstThreeDiffs.filter((diff) => diff > 0).length > 1 ? 1 : -1;
-
-		let removed = false;
-		let leftover = 0;
-		for (const [i, diff] of diffs.entries()) {
-			const realDiff = diff + (leftover || 0);
-			leftover = 0;
-			if (
-				realDiff / Math.abs(realDiff) !== direction ||
-				Math.abs(realDiff) < 1 ||
-				Math.abs(realDiff) > 3
-			) {
-				if (removed) {
-					return false;
-				}
-				removed = true;
-				if (i > 0) {
-					leftover = realDiff;
-				}
+		const problems = diffs
+			.map((_, i) => i)
+			.filter((i) => {
+				return Math.abs(diffs[i] - 2 * direction) >= 2;
+			});
+		switch (problems.length) {
+			case 0:
+				return true;
+			case 1: {
+				return (
+					problems[0] === 0 ||
+					problems[0] === diffs.length - 1 ||
+					Math.abs(
+						diffs[problems[0]] + diffs[problems[0] + 1] - 2 * direction,
+					) < 2 ||
+					Math.abs(
+						diffs[problems[0]] + diffs[problems[0] - 1] - 2 * direction,
+					) < 2
+				);
 			}
+			case 2: {
+				return (
+					problems[1] - problems[0] === 1 &&
+					Math.abs(diffs[problems[0]] + diffs[problems[1]] - 2 * direction) < 2
+				);
+			}
+			default:
+				return false;
 		}
-		return true;
 	}).length;
 };
