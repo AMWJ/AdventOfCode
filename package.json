@@ -1,0 +1,19 @@
+{
+  "name": "ariels-advent_of_code",
+  "version": "1.0.0",
+  "description": "Ariel's Advent of Code repository",
+  "main": "index.js",
+  "repository": "https://github.com/AMWJ/AdventOfCode.git",
+  "private": true,
+  "author": "arielj321@gmail.com",
+  "license": "MIT",
+  "scripts": {
+    "run:2024": "echo $$npm_config_script",
+    "start-ts": "yarn --cwd ./2024",
+    "test": "jest"
+  },
+  "workspaces": [
+    "2023",
+    "2024"
+  ]
+}
