@@ -1,17 +1,28 @@
 import { readLines } from "../utils/file";
+import { newGrid } from "../utils/grid";
 import { sum } from "../utils/math";
 
-export const star1 = async () => {
+const parse = async () => {
 	const lines = await readLines(`${__dirname}/input.txt`);
+	return lines.map((line) => {
+		const [totalStr, sequenceStr] = line.split(": ");
+		if (totalStr === undefined || sequenceStr === undefined) {
+			throw new Error("Invalid input");
+		}
+		const total = Number(totalStr);
+		const sequence = sequenceStr.split(" ").map((number) => Number(number));
+		return { total, sequence };
+	});
+};
+
+export const star1 = async () => {
+	const lines = await parse();
 	return sum(
-		lines.map((line) => {
-			const [totalStr, sequenceStr] = line.split(": ");
-			const total = Number.parseInt(totalStr);
-			const sequence = sequenceStr
-				.split(" ")
-				.map((number) => Number.parseInt(number));
-			return sequence
-				.slice(1)
+		lines.map(({ total, sequence: [first, ...restOfSequence] }) => {
+			if (first === undefined) {
+				throw new Error("Invalid input");
+			}
+			return restOfSequence
 				.reduce(
 					(acc, number) => {
 						const newSet = new Set<number>();
@@ -25,7 +36,7 @@ export const star1 = async () => {
 						}
 						return newSet;
 					},
-					new Set<number>([sequence[0]]),
+					new Set<number>([first]),
 				)
 				.has(total)
 				? total
@@ -35,16 +46,13 @@ export const star1 = async () => {
 };
 
 export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
+	const lines = await parse();
 	return sum(
-		lines.map((line) => {
-			const [totalStr, sequenceStr] = line.split(": ");
-			const total = Number.parseInt(totalStr);
-			const sequence = sequenceStr
-				.split(" ")
-				.map((number) => Number.parseInt(number));
-			return sequence
-				.slice(1)
+		lines.map(({ total, sequence: [first, ...restOfSequence] }) => {
+			if (first === undefined) {
+				throw new Error("Invalid input");
+			}
+			return restOfSequence
 				.reverse()
 				.reduce(
 					(acc, number) => {
@@ -66,7 +74,7 @@ export const star2 = async () => {
 					},
 					new Set<number>([total]),
 				)
-				.has(sequence[0])
+				.has(first)
 				? total
 				: 0;
 		}),

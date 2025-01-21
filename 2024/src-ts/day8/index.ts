@@ -1,82 +1,53 @@
-import { readLines } from "../utils/file";
+import { readGrid, readLines } from "../utils/file";
+import { pairs } from "../utils/general";
+import { distance, type Cell } from "../utils/grid";
 import { sum } from "../utils/math";
 
+const parse = async () => {
+	return await readGrid(`${__dirname}/input.txt`, "");
+};
+
 export const star1 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const allAntennas: { [key: string]: { i: number, j: number }[] } = {};
-	for (let j = 0; j < lines.length; j++) {
-		const line = lines[j];
-		for (let i = 0; i < line.length; i++) {
-			const char = line[i];
-			if (char === '.') {
-				continue;
-			}
-			allAntennas[char] = allAntennas[char] || [];
-			allAntennas[char].push({ i, j });
-		}
+	const grid = await parse();
+	for (const cell of grid.findAll((value) => value !== ".")) {
+		grid.tagCell(cell, cell.value);
 	}
-	const antinodes = {};
-	for (const [key, antennas] of Object.entries(allAntennas)) {
-		for (let i = 0; i < antennas.length; i++) {
-			const antenna = antennas[i];
-			for (let j = i + 1; j < antennas.length; j++) {
-				const antenna2 = antennas[j];
-				const iDistance = antenna.i - antenna2.i;
-				const jDistance = antenna.j - antenna2.j;
-				const antinode1 = { i: antenna.i + iDistance, j: antenna.j + jDistance };
-				const antinode2 = { i: antenna2.i - iDistance, j: antenna2.j - jDistance };
-				if (antinode1.i >= 0 && antinode1.j >= 0 && antinode1.i < lines[0].length && antinode1.j < lines.length) {
-					antinodes[antinode1.j] = antinodes[antinode1.j] || {};
-					antinodes[antinode1.j][antinode1.i] = key;
-				}
-				if (antinode2.i >= 0 && antinode2.j >= 0 && antinode2.i < lines[0].length && antinode2.j < lines.length) {
-					antinodes[antinode2.j] = antinodes[antinode2.j] || {};
-					antinodes[antinode2.j][antinode2.i] = key;
-				}
+	for (const tag of Array.from(grid.tags.keys())) {
+		for (const [first, second] of pairs(grid.findAllTagged(tag))) {
+			const difference = distance(first, second);
+			const antinode1 = grid.getDirection(first, difference);
+			const antinode2 = grid.getDirection(second, difference, -1);
+			if (antinode1 !== undefined) {
+				grid.tagCell(antinode1, "antinode");
+			}
+			if (antinode2 !== undefined) {
+				grid.tagCell(antinode2, "antinode");
 			}
 		}
 	}
-	return sum(Object.values(antinodes).map((line) => Object.values(line).length));
+	return grid.findAllTagged("antinode").length;
 };
 
 export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const allAntennas: { [key: string]: { i: number, j: number }[] } = {};
-	for (let j = 0; j < lines.length; j++) {
-		const line = lines[j];
-		for (let i = 0; i < line.length; i++) {
-			const char = line[i];
-			if (char === '.') {
-				continue;
-			}
-			allAntennas[char] = allAntennas[char] || [];
-			allAntennas[char].push({ i, j });
-		}
+	const grid = await parse();
+	for (const cell of grid.findAll((value) => value !== ".")) {
+		grid.tagCell(cell, cell.value);
 	}
-	const antinodes = {};
-	for (const [key, antennas] of Object.entries(allAntennas)) {
-		for (let i = 0; i < antennas.length; i++) {
-			const antenna = antennas[i];
-			for (let j = i + 1; j < antennas.length; j++) {
-				const antenna2 = antennas[j];
-				const distance = {
-					i: antenna.i - antenna2.i,
-					j: antenna.j - antenna2.j
-				};
-				let antinode1 = antenna;
-				let antinode2 = antenna2;
-				while (antinode1.i >= 0 && antinode1.j >= 0 && antinode1.i < lines[0].length && antinode1.j < lines.length) {
-					antinodes[antinode1.j] = antinodes[antinode1.j] || {};
-					antinodes[antinode1.j][antinode1.i] = key;
-					antinode1 = { i: antinode1.i + distance.i, j: antinode1.j + distance.j };
-				}
-				while (antinode2.i >= 0 && antinode2.j >= 0 && antinode2.i < lines[0].length && antinode2.j < lines.length) {
-					antinodes[antinode2.j] = antinodes[antinode2.j] || {};
-					antinodes[antinode2.j][antinode2.i] = key;
-					antinode2 = { i: antinode2.i - distance.i, j: antinode2.j - distance.j };
-				}
+	for (const tag of Array.from(grid.tags.keys())) {
+		for (const [first, second] of pairs(grid.findAllTagged(tag))) {
+			const difference = distance(first, second);
+			let antinode1: Cell<string> | undefined = first;
+			let antinode2: Cell<string> | undefined = second;
+
+			while (antinode1 !== undefined) {
+				grid.tagCell(antinode1, "antinode");
+				antinode1 = grid.getDirection(antinode1, difference);
+			}
+			while (antinode2 !== undefined) {
+				grid.tagCell(antinode2, "antinode");
+				antinode2 = grid.getDirection(antinode2, difference, -1);
 			}
 		}
 	}
-	return sum(Object.values(antinodes).map((line) => Object.values(line).length));
+	return grid.findAllTagged("antinode").length;
 };

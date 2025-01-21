@@ -11,6 +11,7 @@ const main = async () => {
 	try {
 		await import(`./day${day}`);
 	} catch (e) {
+		console.log(e);
 		const files = await readdir("./src-ts/template/");
 		mkdir(`./src-ts/day${day}`);
 		for (const file of files) {

@@ -4,7 +4,7 @@
 	"description": "Advent of Code 2024 solutions in Rust",
 	"main": "src-ts/index.ts",
 	"scripts": {
-		"start-ts": "nodemon src-ts/index.ts",
+		"start-ts": "nodemon --exec \"ts-node \" src-ts/index.ts",
 		"start-rs": "cargo run --",
 		"build": "cargo build --release",
 		"test-ts": "jest"

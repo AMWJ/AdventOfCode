@@ -1,44 +1,51 @@
 import { readLines } from "../utils/file";
-import { sum } from "../utils/math";
+import { newGrid } from "../utils/grid";
+import { determinant, sum } from "../utils/math";
 
-export const star1 = async () => {
+const parse = async () => {
 	const lines = await readLines(`${__dirname}/input.txt`);
 	const matrices: {
-		a: [number, number];
-		b: [number, number];
-		total: [number, number];
+		a: number[];
+		b: number[];
+		total: number[];
 	}[] = [];
 	for (let i = 0; i < lines.length; i += 4) {
+		const [machineA, machineB, total] = [lines[i], lines[i + 1], lines[i + 2]];
+		if (
+			machineA === undefined ||
+			machineB === undefined ||
+			total === undefined
+		) {
+			throw new Error("undefined");
+		}
 		matrices.push({
-			a: lines[i]
+			a: machineA
 				.split("+")
 				.slice(1)
-				.map((l) => Number.parseInt(l.split(",")[0].trim())) as [
-				number,
-				number,
-			],
-			b: lines[i + 1]
+				.map((l) => Number.parseInt(l.split(",")[0]?.trim() ?? "")),
+			b: machineB
 				.split("+")
 				.slice(1)
-				.map((l) => Number.parseInt(l.split(",")[0].trim())) as [
-				number,
-				number,
-			],
-			total: lines[i + 2]
+				.map((l) => Number.parseInt(l.split(",")[0]?.trim() ?? "")),
+			total: total
 				.split(" ")
 				.slice(1)
-				.map((l) => Number.parseInt(l.split("=")[1])) as [number, number],
+				.map((l) => Number.parseInt(l.split("=")[1] ?? "")),
 		});
 	}
+	return matrices;
+};
+
+export const star1 = async () => {
+	const matrices = await parse();
 	return sum(
 		matrices.map(({ a, b, total }) => {
-			const denominator = a[0] * b[1] - a[1] * b[0];
+			const denominator = determinant(newGrid({ values: [a, b] }));
 			if (denominator === 0) {
-				console.log({ a, b, total });
-				console.log("denominator is 0");
+				throw new Error("a and b are linearly dependent");
 			}
-			const bNumerator = total[0] * b[1] - total[1] * b[0];
-			const aNumerator = a[0] * total[1] - a[1] * total[0];
+			const bNumerator = determinant(newGrid({ values: [total, b] }));
+			const aNumerator = determinant(newGrid({ values: [a, total] }));
 			if (aNumerator % denominator !== 0 || bNumerator % denominator !== 0) {
 				return 0;
 			}
@@ -48,44 +55,16 @@ export const star1 = async () => {
 };
 
 export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const matrices: {
-		a: [number, number];
-		b: [number, number];
-		total: [number, number];
-	}[] = [];
-	for (let i = 0; i < lines.length; i += 4) {
-		matrices.push({
-			a: lines[i]
-				.split("+")
-				.slice(1)
-				.map((l) => Number.parseInt(l.split(",")[0].trim())) as [
-				number,
-				number,
-			],
-			b: lines[i + 1]
-				.split("+")
-				.slice(1)
-				.map((l) => Number.parseInt(l.split(",")[0].trim())) as [
-				number,
-				number,
-			],
-			total: lines[i + 2]
-				.split(" ")
-				.slice(1)
-				.map((l) => Number.parseInt(l.split("=")[1])) as [number, number],
-		});
-	}
+	const matrices = await parse();
 	return sum(
 		matrices.map(({ a, b, total }) => {
-			const denominator = a[0] * b[1] - a[1] * b[0];
-			total = [total[0] + 10000000000000, total[1] + 10000000000000];
+			const adjustedTotal = total.map((t) => t + 10000000000000);
+			const denominator = determinant(newGrid({ values: [a, b] }));
 			if (denominator === 0) {
-				console.log({ a, b, total });
-				console.log("denominator is 0");
+				throw new Error("a and b are linearly dependent");
 			}
-			const bNumerator = total[0] * b[1] - total[1] * b[0];
-			const aNumerator = a[0] * total[1] - a[1] * total[0];
+			const bNumerator = determinant(newGrid({ values: [adjustedTotal, b] }));
+			const aNumerator = determinant(newGrid({ values: [a, adjustedTotal] }));
 			if (aNumerator % denominator !== 0 || bNumerator % denominator !== 0) {
 				return 0;
 			}

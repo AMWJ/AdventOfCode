@@ -1,9 +1,12 @@
-import { readLineOfNumbers, readLines } from "../utils/file";
+import { readLinesOfNumbers, readLines } from "../utils/file";
 import { sum } from "../utils/math";
-import { sleep } from "../utils/sleep";
+
+const parse = async () => {
+	return (await readLinesOfNumbers(`${__dirname}/input.txt`))?.[0] ?? [];
+};
 
 export const star1 = async () => {
-	const line = (await readLineOfNumbers(`${__dirname}/input.txt`))?.[0];
+	const line = await parse();
 	let keys: {
 		[key: string]: number;
 	} = {};
@@ -40,7 +43,7 @@ export const star1 = async () => {
 };
 
 export const star2 = async () => {
-	const line = (await readLineOfNumbers(`${__dirname}/input.txt`))?.[0];
+	const line = await parse();
 	let keys: {
 		[key: string]: number;
 	} = {};

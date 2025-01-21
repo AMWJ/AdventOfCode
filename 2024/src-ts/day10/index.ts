@@ -1,89 +1,56 @@
-import { readLines } from "../utils/file";
+import { readGridOfNumbers, readLines } from "../utils/file";
 import { sum } from "../utils/math";
-import { sleep } from "../utils/sleep";
+
+export const parse = async () => {
+	return await readGridOfNumbers(`${__dirname}/input.txt`, "");
+};
 
 export const star1 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const numbers = lines.map((line) =>
-		line.split("").map((i) => Number.parseInt(i)),
-	);
-	let spaces = numbers.map((line) => line.map((n) => new Set<number>()));
-	const zeroes = numbers.flatMap((line, j) =>
-		line
-			.map((_, i) => [i, j] as [number, number])
-			.filter(([i, j]) => numbers[j][i] === 0),
-	);
-	for (const [index, [i, j]] of zeroes.entries()) {
-		spaces[j][i].add(index);
+	const grid = await parse();
+	const spaces = grid.map(({ value }) => ({
+		trails: new Set<number>(),
+		value,
+	}));
+	for (const [index, cell] of spaces
+		.findAll(({ value }) => value === 0)
+		.entries()) {
+		cell.value.trails.add(index);
 	}
-	for (let iteration = 0; iteration < 9; iteration++) {
-		const newSpaces = numbers.map((line) => line.map((n) => new Set<number>()));
-		for (let j = 0; j < numbers.length; j++) {
-			for (let i = 0; i < numbers[j].length; i++) {
-				if (numbers[j][i] !== iteration) {
-					continue;
-				}
-				const neighbors = [
-					[i - 1, j],
-					[i + 1, j],
-					[i, j - 1],
-					[i, j + 1],
-				];
-				for (const [x, y] of neighbors) {
-					if (x < 0 || x >= numbers[j].length || y < 0 || y >= numbers.length) {
-						continue;
-					}
-					if (numbers[y][x] === iteration + 1) {
-						for (const index of spaces[j][i]) {
-							newSpaces[y][x].add(index);
-						}
-					}
+	const N = 9;
+	for (let iteration = 0; iteration < N; iteration++) {
+		for (const cell of spaces.findAll(({ value }) => value === iteration)) {
+			for (const neighbor of spaces
+				.neighbors(cell)
+				.filter(({ value: { value } }) => value === iteration + 1)) {
+				for (const index of cell.value.trails ?? []) {
+					neighbor.value.trails.add(index);
 				}
 			}
 		}
-		spaces = newSpaces;
 	}
-	return sum(spaces.flatMap((line) => line.map((s) => s.size)));
+	return sum(
+		spaces
+			.findAll(({ value }) => value === N)
+			.map((cell) => cell.value.trails.size),
+	);
 };
 
 export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const numbers = lines.map((line) =>
-		line.split("").map((i) => Number.parseInt(i)),
-	);
-	let spaces = numbers.map((line) => line.map((n) => 0));
-	const zeroes = numbers.flatMap((line, j) =>
-		line
-			.map((_, i) => [i, j] as [number, number])
-			.filter(([i, j]) => numbers[j][i] === 0),
-	);
-	for (const [index, [i, j]] of zeroes.entries()) {
-		spaces[j][i] = 1;
-	}
+	const grid = await parse();
+	const spaces = grid.map(({ value }) => ({
+		trails: value === 0 ? 1 : 0,
+		value,
+	}));
 	for (let iteration = 0; iteration < 9; iteration++) {
-		const newSpaces = numbers.map((line) => line.map((n) => 0));
-		for (let j = 0; j < numbers.length; j++) {
-			for (let i = 0; i < numbers[j].length; i++) {
-				if (numbers[j][i] !== iteration) {
-					continue;
-				}
-				const neighbors = [
-					[i - 1, j],
-					[i + 1, j],
-					[i, j - 1],
-					[i, j + 1],
-				];
-				for (const [x, y] of neighbors) {
-					if (x < 0 || x >= numbers[j].length || y < 0 || y >= numbers.length) {
-						continue;
-					}
-					if (numbers[y][x] === iteration + 1) {
-						newSpaces[y][x] += spaces[j][i];
-					}
-				}
+		for (const cell of spaces.findAll(({ value }) => value === iteration)) {
+			for (const neighbor of spaces
+				.neighbors(cell)
+				.filter(({ value: { value } }) => value === iteration + 1)) {
+				neighbor.value.trails += cell.value.trails;
 			}
 		}
-		spaces = newSpaces;
 	}
-	return sum(spaces.flatMap((line) => line.map((s) => s)));
+	return sum(
+		spaces.findAll(({ value }) => value === 9).map((cell) => cell.value.trails),
+	);
 };

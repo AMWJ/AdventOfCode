@@ -1,52 +1,66 @@
-import { readLineOfNumbers } from "../utils/file";
+import { readLinesOfNumbers } from "../utils/file";
+import { adjacencies } from "../utils/general";
 import { sum } from "../utils/math";
 
+const parse = async () => {
+	return readLinesOfNumbers(`${__dirname}/input.txt`);
+};
+
 export const star1 = async () => {
-	const lines = await readLineOfNumbers(`${__dirname}/input.txt`);
+	const lines = await parse();
 	return lines.filter((line) => {
-		const firstSign = (line[1] - line[0]) / Math.abs(line[1] - line[0]);
-		return line.every(
-			(element, i) =>
-				i === 0 || Math.abs(-(element - line[i - 1]) * firstSign + 2) < 2,
-		);
+		const diffs = adjacencies(line).map(([first, second]) => second - first);
+		if (diffs[0] === undefined) {
+			return false;
+		}
+		const firstSign = diffs[0] / Math.abs(diffs[0]);
+
+		return diffs.every((diff) => Math.abs(-diff * firstSign + 2) < 2);
 	}).length;
 };
 
 export const star2 = async () => {
-	const lines = await readLineOfNumbers(`${__dirname}/input.txt`);
+	const lines = await parse();
 	return lines.filter((line) => {
-		const diffs = line.slice(1).map((element, i) => element - line[i]);
+		const lineAdjacencies = adjacencies(line);
+		const diffs = lineAdjacencies.map(([first, second]) => second - first);
 		const firstThreeDiffs = diffs.slice(0, 3);
 		const direction =
 			firstThreeDiffs.filter((diff) => diff > 0).length > 1 ? 1 : -1;
 		const problems = diffs
-			.map((_, i) => i)
-			.filter((i) => {
-				return Math.abs(diffs[i] - 2 * direction) >= 2;
-			});
-		switch (problems.length) {
-			case 0:
-				return true;
-			case 1: {
-				return (
-					problems[0] === 0 ||
-					problems[0] === diffs.length - 1 ||
-					Math.abs(
-						diffs[problems[0]] + diffs[problems[0] + 1] - 2 * direction,
-					) < 2 ||
-					Math.abs(
-						diffs[problems[0]] + diffs[problems[0] - 1] - 2 * direction,
-					) < 2
-				);
-			}
-			case 2: {
-				return (
-					problems[1] - problems[0] === 1 &&
-					Math.abs(diffs[problems[0]] + diffs[problems[1]] - 2 * direction) < 2
-				);
-			}
-			default:
-				return false;
+			.map((diff, i) => ({
+				diff,
+				i,
+			}))
+			.filter(({ diff }) => {
+				return Math.abs(diff - 2 * direction) >= 2;
+			})
+			.map(({ i }) => i);
+		if (problems[0] === undefined) {
+			return true;
 		}
+		const element = diffs[problems[0]];
+		if (element === undefined) {
+			throw new Error(`index ${problems[0]} is undefined in ${diffs}`);
+		}
+		const previous = diffs[problems[0] - 1];
+		const next = diffs[problems[0] + 1];
+		if (problems[1] === undefined) {
+			return (
+				previous === undefined ||
+				next === undefined ||
+				Math.abs(element + next - 2 * direction) < 2 ||
+				Math.abs(element + previous - 2 * direction) < 2
+			);
+		}
+		if (problems[2] !== undefined) {
+			return false;
+		}
+		problems[1];
+		return (
+			problems[1] - problems[0] === 1 &&
+			next &&
+			Math.abs(element + next - 2 * direction) < 2
+		);
 	}).length;
 };

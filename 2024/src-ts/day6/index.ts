@@ -1,127 +1,99 @@
-import { readLines } from "../utils/file";
-import { sum } from "../utils/math";
+import { readGrid } from "../utils/file";
+import {
+	type Cell,
+	type DirectionChar,
+	directionToChar,
+	type Grid,
+	rotateRight,
+	Up,
+} from "../utils/grid";
 
-export const star1 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const getCoordinate = ([x, y]: [number, number]) => lines?.[y]?.[x];
-	let location = lines
-		.entries()
-		.filter(([i, line]) => line.includes("^"))
-		.map<[number, number]>(([j, line]) => [line.indexOf("^"), j])
-		.toArray()[0];
-	let direction = [0, -1];
-	const locations: { [key: number]: Set<number> } = {};
+type Char = "." | "#" | "^";
+
+export const parse = async () => {
+	const grid = (await readGrid(`${__dirname}/input.txt`, "")).mapWithoutTags<
+		Char,
+		string
+	>(({ value }) => (value === "^" ? "^" : value === "#" ? "#" : "."));
+	return grid;
+};
+
+export const followPath = (
+	grid: Grid<Char, DirectionChar | "visited">,
+	start: Cell<Char, DirectionChar | "visited">,
+) => {
+	let location = start;
+	let direction = Up;
 	while (true) {
-		locations[location[0]] = locations[location[0]] || new Set<number>();
-		locations[location[0]].add(location[1]);
-		const next: [number, number] = [
-			location[0] + direction[0],
-			location[1] + direction[1],
-		];
-		if (getCoordinate(next) === undefined) {
-			break;
+		if (grid.hasTag(location, directionToChar(direction))) {
+			return false;
 		}
-		const nextLocation = getCoordinate(next);
-		if (nextLocation === "#") {
-			direction = [-direction[1], direction[0]];
+		grid.tagCell(location, directionToChar(direction));
+		grid.tagCell(location, "visited");
+		const next = grid.getDirection(location, direction);
+		if (next === undefined) {
+			return true;
+		}
+		if (next.value === "#") {
+			direction = rotateRight(direction);
 		} else {
 			location = next;
 		}
 	}
-	return sum(Object.entries(locations).map(([_, set]) => set.size));
 };
 
-export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const getCoordinate = ([x, y]: [number, number]) => lines?.[y]?.[x];
-	const coordinateToIndex = ([x, y]: [number, number]) => x === 0 ? y > 0 ? 2 : 0 : x > 0 ? 1 : 3;
-	type Covered = ({ priors: { location: [number, number], direction: [number, number] }[], leads?: { [j: number]: { [i: number]: Set<number> } } })
-	const emptyCovered = { priors: [] };
-	const covered: [Covered, Covered, Covered, Covered][][] = lines.map(() => lines[0].split("").map(() => [emptyCovered, emptyCovered, emptyCovered, emptyCovered]));
-	//console.log(JSON.stringify(covered));
-	let first = lines
-		.entries()
-		.filter(([i, line]) => line.includes("^"))
-		.map<[number, number]>(([j, line]) => [line.indexOf("^"), j])
-		.toArray()[0];
-	const queue: { location: [number, number], direction: [number, number], posterior?: { location: [number, number], direction: [number, number] } }[] = [
-		...lines.flatMap<{ location: [number, number], direction: [number, number], posterior?: { location: [number, number], direction: [number, number] } }>((line, j) => [
-			{ location: [0, j], direction: [-1, 0] },
-			{ location: [line.length - 1, j], direction: [1, 0] }
-		]),
-		...lines[0].split("").flatMap<{ location: [number, number], direction: [number, number], posterior?: { location: [number, number], direction: [number, number] } }>((_, i) => [
-			{ location: [i, 0], direction: [0, -1] },
-			{ location: [i, lines.length - 1], direction: [0, 1] }
-		])];
-	while (queue.length > 0) {
-		const { location, direction, posterior } = queue.shift();
-		const posteriorLocation = posterior?.location;
-		const posteriorDirection = posterior?.direction;
-		if (!getCoordinate(location) || getCoordinate(location) === "#") {
-			continue;
-		}
-		if (covered[location[1]][location[0]][coordinateToIndex(direction)].leads !== undefined) {
-			continue;
-		}
-
-		let leads: { [j: number]: { [i: number]: Set<number> } };
-		if (posteriorLocation) {
-			const posteriorLeads = covered[posteriorLocation[1]][posteriorLocation[0]][coordinateToIndex(posteriorDirection)].leads;
-			leads = {
-				...posteriorLeads,
-				[posteriorLocation[1]]: {
-					...posteriorLeads[posteriorLocation[1]],
-					[posteriorLocation[0]]: new Set<number>([...(posteriorLeads[posteriorLocation[1]]?.[posteriorLocation[0]] ?? []), coordinateToIndex(posteriorDirection)]),
-				},
-			}
-			// console.log({ leads, posteriorLocation, posteriorDirection });
-			covered[posteriorLocation[1]][posteriorLocation[0]][coordinateToIndex(posteriorDirection)] = { ...covered[posteriorLocation[1]][posteriorLocation[0]][coordinateToIndex(posteriorDirection)], priors: [{ location, direction }, ...covered[posteriorLocation[1]][posteriorLocation[0]][coordinateToIndex(posteriorDirection)].priors] };
-		} else {
-			leads = {}
-		}
-		// console.log({ location, direction, leads });
-		covered[location[1]][location[0]][coordinateToIndex(direction)] = { ...covered[location[1]][location[0]][coordinateToIndex(direction)], leads };
-
-		const backwardsLocation: [number, number] = [location[0] - direction[0], location[1] - direction[1]];
-		queue.push({ location: backwardsLocation, direction, posterior: { location, direction } });
-		// console.log("Just pushed", queue[queue.length - 1]);
-		const leftDirection: [number, number] = [direction[1], -direction[0]];
-		if (getCoordinate([location[0] + leftDirection[0], location[1] + leftDirection[1]]) === "#") {
-			queue.push({ location, direction: leftDirection, posterior: { location, direction } });
-			// console.log("Just pushed", queue[queue.length - 1]);
-		}
+export const star1 = async () => {
+	const grid = await parse();
+	const start = grid.get("^");
+	if (start === undefined) {
+		throw new Error("No start found");
 	}
-	let currentLocation = first;
-	let currentDirection: [number, number] = [0, -1];
-	const barrelLocations = {};
-	let loops = 0;
+	let location = start;
+	let direction = Up;
 	while (true) {
-		// console.log("Current location", currentLocation);
-		if (!getCoordinate(currentLocation)) {
+		grid.tagCell(location, "visited");
+		const next = grid.getDirection(location, direction);
+		if (next === undefined) {
 			break;
 		}
-
-		// Can we put a barrel here?
-		const turnRight: [number, number] = [-currentDirection[1], currentDirection[0]];
-		if (getCoordinate([currentLocation[0] + currentDirection[0], currentLocation[1] + currentDirection[1]]) && covered[currentLocation[1]][currentLocation[0]][coordinateToIndex(turnRight)].leads?.[currentLocation[1]]?.[currentLocation[0]]?.has(coordinateToIndex(currentDirection))) {
-			// Found a loop!
-			loops++;
-			// console.log("Found a loop at", [currentLocation[0] + currentDirection[0], currentLocation[1] + currentDirection[1]]);
-		}
-
-		// Continue on
-		const next: [number, number] = [
-			currentLocation[0] + currentDirection[0],
-			currentLocation[1] + currentDirection[1],
-		];
-
-		const nextLocation = getCoordinate(next);
-		if (nextLocation === "#") {
-			currentDirection = turnRight;
-			continue;
+		if (next.value === "#") {
+			direction = rotateRight(direction);
 		} else {
-			currentLocation = next;
+			location = next;
 		}
 	}
-	return loops;
+	return grid.findAllTagged("visited").length;
+};
+
+// TODO: Make smarter. Mostly wrote this just to get the answer, and optimize from there.
+export const star2 = async () => {
+	const grid = (await parse()).mapWithoutTags<Char, DirectionChar | "visited">(
+		({ value }) => value,
+	);
+	const start = grid.get("^");
+	if (start === undefined) {
+		throw new Error("No start found");
+	}
+	const completes = followPath(grid, start);
+	if (!completes) {
+		throw new Error("Path did not complete");
+	}
+	const onPath = grid.findAllTagged("visited");
+	const cycles = onPath.filter((cell) => {
+		grid.deleteTag("<");
+		grid.deleteTag(">");
+		grid.deleteTag("^");
+		grid.deleteTag("v");
+		grid.deleteTag("visited");
+		grid.setValue(cell, "#");
+		const result = followPath(grid, start);
+		grid.setValue(cell, ".");
+		grid.deleteTag("<");
+		grid.deleteTag(">");
+		grid.deleteTag("^");
+		grid.deleteTag("v");
+		grid.deleteTag("visited");
+		return !result;
+	});
+	return cycles.length;
 };

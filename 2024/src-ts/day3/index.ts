@@ -1,8 +1,12 @@
 import { readLines } from "../utils/file";
 import { sum } from "../utils/math";
 
+const parse = async () => {
+	return (await readLines(`${__dirname}/input.txt`)).join();
+};
+
 export const star1 = async () => {
-	const lines = (await readLines(`${__dirname}/input.txt`)).join();
+	const lines = await parse();
 
 	let index = lines.indexOf("mul(");
 	const possibilities: number[] = [];
@@ -23,7 +27,7 @@ export const star1 = async () => {
 						firstValue = false;
 						continue;
 				}
-				const number = Number.parseInt(lines[i]);
+				const number = Number(lines[i] ?? "");
 				if (Number.isNaN(number)) {
 					return 0;
 				}
@@ -33,13 +37,13 @@ export const star1 = async () => {
 					b = b * 10 + number;
 				}
 			}
+			throw new Error("Should not reach here");
 		}),
 	);
 };
 
 export const star2 = async () => {
-	const lines = (await readLines(`${__dirname}/input.txt`)).join();
-
+	const lines = await parse();
 	let enabled = true;
 	let index = lines.indexOf("(");
 	const possibilities: number[] = [];
@@ -59,7 +63,6 @@ export const star2 = async () => {
 				}
 				return 0;
 			}
-
 			if (enabled && prior.endsWith("mul")) {
 				let firstValue = true;
 				let a = 0;
@@ -72,7 +75,7 @@ export const star2 = async () => {
 							firstValue = false;
 							continue;
 					}
-					const number = Number.parseInt(lines[i]);
+					const number = Number(lines[i] ?? "");
 					if (Number.isNaN(number)) {
 						return 0;
 					}

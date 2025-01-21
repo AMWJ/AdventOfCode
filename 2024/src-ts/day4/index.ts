@@ -1,62 +1,48 @@
 import { readLines } from "../utils/file";
+import { Directions, newGrid, rotateLeft, rotateRight } from "../utils/grid";
 
-const directions = [
-	[1, 0],
-	[1, 1],
-	[0, 1],
-	[-1, 1],
-	[-1, 0],
-	[-1, -1],
-	[0, -1],
-	[1, -1],
-];
+const ValidChar = ["M", "A", "S", "X"] as const;
+type Char = (typeof ValidChar)[number];
 
-const diagonalDirections = [
-	[1, 1],
-	[-1, 1],
-	[-1, -1],
-	[1, -1],
-];
+const validateChar = (c: string): c is Char => {
+	return ValidChar.includes(c as Char);
+};
+
+const parse = async () => {
+	return newGrid<Char>({
+		values: (await readLines(`${__dirname}/input.txt`)).map((line) =>
+			line.split("").filter(validateChar),
+		),
+	});
+};
 
 export const star1 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const xs = [];
-	lines.map((line, j) => {
-		let index = line.indexOf("X");
-		while (index !== -1) {
-			xs.push([index, j]);
-			index = line.indexOf("X", index + 1);
-		}
-	});
-	return xs.flatMap(([i, j]) => {
-		const x = directions.filter(([di, dj]) => {
-			const M = lines[j + dj]?.[i + di];
-			const A = lines[j + 2 * dj]?.[i + 2 * di];
-			const S = lines[j + 3 * dj]?.[i + 3 * di];
-			return M === "M" && A === "A" && S === "S";
+	const grid = await parse();
+	return grid.getAll("X").flatMap((xCell) => {
+		const x = Directions.All.filter((direction) => {
+			const M = xCell.getDirection(direction);
+			const A = M?.getDirection(direction);
+			const S = A?.getDirection(direction);
+			return M?.value === "M" && A?.value === "A" && S?.value === "S";
 		});
 		return x;
 	}).length;
 };
 
 export const star2 = async () => {
-	const lines = await readLines(`${__dirname}/input.txt`);
-	const xs = [];
-	lines.map((line, j) => {
-		let index = line.indexOf("M");
-		while (index !== -1) {
-			xs.push([index, j]);
-			index = line.indexOf("M", index + 1);
-		}
-	});
-	return xs.flatMap(([i, j]) =>
-		diagonalDirections.filter(([di, dj]) => {
-			const A = lines[j + dj]?.[i + di];
-			const S = lines[j + 2 * dj]?.[i + 2 * di];
-			const firstCorner = lines[j + dj - di]?.[i + di + dj];
-			const secondCorner = lines[j + dj + di]?.[i + di - dj];
+	const grid = await parse();
+	return grid.getAll("M").flatMap((mCell) =>
+		Directions.Diagonal.filter((direction) => {
+			const mutableDirection = [direction[0], direction[1]];
+			const A = mCell.getDirection(direction);
+			const S = A?.getDirection(direction);
+			const firstCorner = A?.getDirection(rotateLeft(direction));
+			const secondCorner = A?.getDirection(rotateRight(direction));
 			return (
-				A === "A" && S === "S" && firstCorner === "M" && secondCorner === "S"
+				A?.value === "A" &&
+				S?.value === "S" &&
+				firstCorner?.value === "M" &&
+				secondCorner?.value === "S"
 			);
 		}),
 	).length;
